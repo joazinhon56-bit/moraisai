@@ -2,7 +2,7 @@ import os
 import urllib.parse
 import requests
 import base64
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, send_from_directory # Adicionei isto 
 from groq import Groq
 
 app = Flask(__name__)
@@ -121,7 +121,13 @@ def chat():
 @app.route('/googleacfc2899a70cedc3.html')
 def google_verification():
     return "google-site-verification: googleacfc2899a70cedc3.html"
+@app.route('/manifest.json')
+def serve_manifest():
+    return send_from_directory('static', 'manifest.json')
 
+@app.route('/sw.js')
+def serve_sw():
+    return send_from_directory('static', 'sw.js')
 if __name__ == '__main__':
     # O Render fornece a porta automaticamente através da variável de ambiente PORT
     port = int(os.environ.get("PORT", 5000))
