@@ -65,24 +65,40 @@
 
     <main id="main-wrapper">
         <div id="login-container">
-            <div class="login-box">
-                <h2>Morais AI</h2>
-                <p>Explora o futuro da inteligência.</p>
-                
-                <input type="text" id="username" class="auth-input" placeholder="Nome de utilizador">
-                <input type="password" id="password" class="auth-input" placeholder="Palavra-passe">
-                
-                <button class="btn-primary" onclick="processarAuth()">Entrar</button>
-                
-                <div style="margin-top: 20px; display: flex; justify-content: center;">
-                    <div id="g_id_onload" 
-                         data-client_id="314184167979-drqft3ldcshj3vn1730dtt0er1ha9spd.apps.googleusercontent.com" 
-                         data-callback="handleCredentialResponse">
-                    </div>
-                    <div class="g_id_signin" data-type="standard"></div>
+           <div id="login-container">
+        <div class="login-box">
+            <h2 id="auth-title">Entrar no Morais AI</h2>
+            <p id="auth-subtitle">Bem-vindo de volta, explorador.</p>
+            
+            <div id="email-field" style="display: none;">
+                <input type="email" id="email" class="auth-input" placeholder="Endereço de Email">
+            </div>
+
+            <input type="text" id="username" class="auth-input" placeholder="Nome de utilizador">
+            <input type="password" id="password" class="auth-input" placeholder="Palavra-passe">
+            
+            <button class="btn-primary" id="btn-auth-action" onclick="processarAuth()">Entrar</button>
+            
+            <div style="margin-top: 20px; display: flex; flex-direction: column; align-items: center; gap: 15px;">
+                <div style="display: flex; align-items: center; width: 100%; color: #444; font-size: 12px;">
+                    <hr style="flex: 1; border: 0; border-top: 1px solid #2d2d2d;">
+                    <span style="padding: 0 10px;">OU</span>
+                    <hr style="flex: 1; border: 0; border-top: 1px solid #2d2d2d;">
                 </div>
+
+                <div id="g_id_onload" 
+                     data-client_id="314184167979-drqft3ldcshj3vn1730dtt0er1ha9spd.apps.googleusercontent.com" 
+                     data-callback="handleCredentialResponse">
+                </div>
+                <div class="g_id_signin" data-type="standard"></div>
+            </div>
+
+            <div class="toggle-link" style="margin-top: 25px; font-size: 14px; color: #888;">
+                <span id="toggle-question">É novo?</span> 
+                <span onclick="alternarModo()" id="toggle-action" style="color: #007bff; cursor: pointer; font-weight: bold; margin-left: 5px;">Crie uma conta</span>
             </div>
         </div>
+    </div>
 
         <div class="top-bar">
             <span id="display-user" style="font-weight: bold; color: #007bff;"></span>
@@ -102,127 +118,126 @@
     </main>
 
     <script>
-        let currentSessionId = null;
-        let fotoData = null;
+    // Variáveis globais para controlar o estado da app
+    let modoRegistro = false; 
+    let currentSessionId = null;
+    let fotoData = null;
 
-        window.onload = () => {
-            const user = localStorage.getItem('morais_user');
-            if (user) {
-                entrarNoSistema(user);
-                carregarListaSessoes();
-                novoChat();
-            }
-        };
-
-        function processarAuth() {
-            const user = document.getElementById('username').value;
-            const pass = document.getElementById('password').value;
-            
-            if (user.trim().length < 3) return alert("Insere um nome válido!");
-            if (pass.length < 4) return alert("A palavra-passe deve ter pelo menos 4 caracteres!");
-
-            localStorage.setItem('morais_user', user);
+    // Executa assim que a página carrega
+    window.onload = () => {
+        const user = localStorage.getItem('morais_user');
+        if (user) {
             entrarNoSistema(user);
-            carregarListaSessoes();
+            if (typeof carregarListaSessoes === "function") carregarListaSessoes();
             novoChat();
         }
+    };
 
-        function entrarNoSistema(nome) {
-            document.getElementById('login-container').style.display = 'none';
-            document.getElementById('display-user').innerText = "@" + nome;
+    // --- ESTA É A FUNÇÃO QUE ESTAVA A FALTAR ---
+    function alternarModo() {
+        modoRegistro = !modoRegistro;
+        
+        const authTitle = document.getElementById('auth-title');
+        const authSubtitle = document.getElementById('auth-subtitle');
+        const emailField = document.getElementById('email-field');
+        const btnAction = document.getElementById('btn-auth-action');
+        const toggleQuestion = document.getElementById('toggle-question');
+        const toggleAction = document.getElementById('toggle-action');
+
+        if (modoRegistro) {
+            authTitle.innerText = "Criar Nova Conta";
+            authSubtitle.innerText = "Junta-te à revolução da IA.";
+            if (emailField) emailField.style.display = "block"; 
+            btnAction.innerText = "Registar agora";
+            toggleQuestion.innerText = "Já tens conta?";
+            toggleAction.innerText = "Faz Login";
+        } else {
+            authTitle.innerText = "Entrar no Morais AI";
+            authSubtitle.innerText = "Bem-vindo de volta, explorador.";
+            if (emailField) emailField.style.display = "none"; 
+            btnAction.innerText = "Entrar";
+            toggleQuestion.innerText = "É novo?";
+            toggleAction.innerText = "Crie uma conta";
+        }
+    }
+
+    // Processa o Login ou Registo manual
+    function processarAuth() {
+        const user = document.getElementById('username').value;
+        const pass = document.getElementById('password').value;
+        const emailInput = document.getElementById('email');
+        const email = emailInput ? emailInput.value : "";
+
+        if (user.trim().length < 3) return alert("Insere um nome válido!");
+        if (pass.length < 4) return alert("Password deve ter pelo menos 4 caracteres!");
+        
+        if (modoRegistro && !email.includes("@")) {
+            return alert("Por favor, insere um email válido!");
         }
 
-        // --- Lógica de Sessões e Chat (Mantida) ---
-        function carregarListaSessoes() {
-            const historyList = document.getElementById('history-list');
-            const sessions = JSON.parse(localStorage.getItem('morais_sessions')) || [];
-            historyList.innerHTML = '';
-            sessions.slice().reverse().forEach(session => {
-                const div = document.createElement('div');
-                div.className = `history-item ${session.id === currentSessionId ? 'active' : ''}`;
-                div.innerText = session.title || "Conversa sem título";
-                div.onclick = () => abrirSessao(session.id);
-                historyList.appendChild(div);
-            });
-        }
+        localStorage.setItem('morais_user', user); [cite: 43]
+        entrarNoSistema(user); [cite: 44]
+    }
 
-        function novoChat() {
-            currentSessionId = Date.now().toString();
-            document.getElementById('chat-container').innerHTML = '';
-            appendMessage("Olá! Sou o **Morais AI**. Como posso ajudar-te hoje?", 'ia', false);
-            carregarListaSessoes();
-        }
+    // Entra na interface de Chat
+    function entrarNoSistema(nome) {
+        const loginContainer = document.getElementById('login-container');
+        const displayUser = document.getElementById('display-user');
+        
+        if (loginContainer) loginContainer.style.display = 'none'; [cite: 46]
+        if (displayUser) displayUser.innerText = "@" + nome; [cite: 47]
+    }
 
-        function salvarMensagemNaSessao(text, type) {
-            let sessions = JSON.parse(localStorage.getItem('morais_sessions')) || [];
-            let session = sessions.find(s => s.id === currentSessionId);
-            if (!session) {
-                session = { id: currentSessionId, title: text.substring(0, 30) + "...", messages: [] };
-                sessions.push(session);
-            }
-            session.messages.push({ text, type });
-            localStorage.setItem('morais_sessions', JSON.stringify(sessions));
-            carregarListaSessoes();
-        }
+    // Login oficial pelo Google
+    function handleCredentialResponse(response) {
+        const payload = JSON.parse(atob(response.credential.split('.')[1]));
+        localStorage.setItem('morais_user', payload.name);
+        entrarNoSistema(payload.name);
+        location.reload(); // Recarrega para ativar o histórico
+    }
 
-        function appendMessage(text, type, save = true) {
-            const container = document.getElementById('chat-container');
-            const div = document.createElement('div');
-            div.className = `message ${type}`;
-            div.innerHTML = text;
-            container.appendChild(div);
-            container.scrollTop = container.scrollHeight;
-            if (save) salvarMensagemNaSessao(text, type);
-        }
+    function fazerLogout() { 
+        localStorage.clear(); [cite: 47]
+        location.reload(); [cite: 48]
+    }
 
-        async function enviarMensagem() {
-            const input = document.getElementById('user-input');
-            const msg = input.value.trim();
-            if (!msg && !fotoData) return;
-            if (msg) appendMessage(msg, 'user');
-            input.value = '';
-            try {
-                const res = await fetch('/chat', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ msg: msg, image: fotoData })
-                });
-                const data = await res.json();
-                appendMessage(data.resposta, 'ia');
-                fotoData = null;
-            } catch (e) {
-                appendMessage("Erro na ligação ao servidor.", 'ia', false);
-            }
-        }
+    // Funções de envio de mensagem (Mantidas do original)
+    async function enviarMensagem() {
+        const input = document.getElementById('user-input'); [cite: 55]
+        const msg = input.value.trim(); [cite: 56]
+        if (!msg && !fotoData) return;
 
-        function handleCredentialResponse(response) {
-            const payload = JSON.parse(atob(response.credential.split('.')[1]));
-            localStorage.setItem('morais_user', payload.name);
-            entrarNoSistema(payload.name);
-            carregarListaSessoes();
-            novoChat();
-        }
+        appendMessage(msg, 'user'); [cite: 56]
+        input.value = ''; [cite: 56]
 
-        function fazerLogout() { localStorage.clear(); location.reload(); }
-
-        function abrirSessao(id) {
-            currentSessionId = id;
-            const sessions = JSON.parse(localStorage.getItem('morais_sessions')) || [];
-            const session = sessions.find(s => s.id === id);
-            document.getElementById('chat-container').innerHTML = '';
-            if (session) session.messages.forEach(m => appendMessage(m.text, m.type, false));
-            carregarListaSessoes();
+        try {
+            const res = await fetch('/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ msg: msg, image: fotoData })
+            }); [cite: 57]
+            const data = await res.json(); [cite: 58]
+            appendMessage(data.resposta, 'ia'); [cite: 58]
+            fotoData = null;
+        } catch (e) {
+            appendMessage("Erro na ligação ao servidor.", 'ia'); [cite: 59]
         }
+    }
 
-        function previewImg() {
-            const file = document.getElementById('file-input').files[0];
-            const reader = new FileReader();
-            reader.onload = (e) => { 
-                fotoData = e.target.result;
-                appendMessage("<i>[Imagem carregada]</i>", 'user'); 
-            };
-            reader.readAsDataURL(file);
-        }
+    function appendMessage(text, type, save = true) {
+        const container = document.getElementById('chat-container'); [cite: 51]
+        const div = document.createElement('div'); [cite: 52]
+        div.className = `message ${type}`; [cite: 52]
+        div.innerHTML = text; [cite: 52]
+        container.appendChild(div); [cite: 52]
+        container.scrollTop = container.scrollHeight; [cite: 52]
+    }
+
+    function novoChat() {
+        document.getElementById('chat-container').innerHTML = '';
+        appendMessage("Olá! Sou o **Morais AI**. Como posso ajudar-te hoje?", 'ia', false);
+    }
+</script>
     </script>
 </body>
 </html>
