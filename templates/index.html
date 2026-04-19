@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Morais AI - Oficial</title>
+    
+    <meta name="google-site-verification" content="googleacfc2899a70cedc3" />
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background-color: #131314; color: #e3e3e3; font-family: 'Inter', sans-serif; display: flex; height: 100vh; overflow: hidden; }
+
+        /* AUTH OVERLAY */
+        #auth-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #131314; display: flex; justify-content: center; align-items: center; z-index: 2000; }
+        .auth-card { background-color: #1e1f20; width: 100%; max-width: 420px; padding: 40px; border-radius: 28px; text-align: center; border: 1px solid #444746; box-shadow: 0 20px 50px rgba(0,0,0,0.4); }
+        .auth-card h1 { font-size: 28px; margin-bottom: 8px; font-weight: 600; color: #fff; }
+        .auth-card p { color: #8e918f; font-size: 14px; margin-bottom: 25px; }
+        .google-btn-container { display: flex; justify-content: center; margin-bottom: 20px; }
+        .divider { display: flex; align-items: center; color: #444746; margin: 20px 0; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
+        .divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: #444746; margin: 0 15px; }
+        .input-group { margin-bottom: 15px; text-align: left; }
+        .input-group input { width: 100%; background-color: #131314; border: 1px solid #444746; color: #fff; padding: 14px 18px; border-radius: 14px; outline: none; transition: 0.2s; }
+        .input-group input:focus { border-color: #8ab4f8; }
+        .primary-btn { width: 100%; background-color: #8ab4f8; color: #131314; padding: 14px; border-radius: 20px; border: none; font-weight: 600; cursor: pointer; margin-top: 10px; transition: 0.2s; }
+        .primary-btn:hover { background-color: #aecbfa; }
+        .link-text { color: #8ab4f8; cursor: pointer; font-size: 13px; margin-top: 20px; display: inline-block; }
+        .link-text:hover { text-decoration: underline; }
+
+        /* LISTA DE CONTAS */
+        .account-list { margin-bottom: 20px; display: flex; flex-direction: column; gap: 10px; }
+        .account-item { background: #2b2c2e; padding: 12px; border-radius: 15px; display: flex; align-items: center; gap: 15px; cursor: pointer; border: 1px solid transparent; transition: 0.2s; text-align: left; }
+        .account-item:hover { border-color: #8ab4f8; background: #333537; }
+        .account-avatar { width: 38px; height: 38px; background: #444; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #8ab4f8; }
+
+        /* APP LAYOUT */
+        #main-app { display: none; width: 100%; height: 100%; }
+        .sidebar { width: 280px; background-color: #1e1f20; padding: 20px; display: flex; flex-direction: column; }
+        .main-content { flex: 1; display: flex; flex-direction: column; position: relative; }
+        .chat-container { flex: 1; width: 100%; max-width: 800px; margin: 0 auto; padding: 20px 20px 140px 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 30px; }
+        .message-row { display: flex; gap: 15px; }
+        .message-row.user { flex-direction: row-reverse; }
+        .avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: #333; flex-shrink: 0; }
+        .message-content { max-width: 80%; line-height: 1.6; white-space: pre-wrap; font-size: 15px; }
+        .user .message-content { background: #1e1f20; padding: 12px 20px; border-radius: 22px 5px 22px 22px; border: 1px solid #333; }
+
+        /* INPUT AREA E PREVIEW DA IMAGEM */
+        .input-wrapper { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 760px; background: #1e1f20; border-radius: 32px; display: flex; align-items: center; padding: 10px 20px; border: 1px solid #444746; z-index: 100;}
+        input[type="text"] { flex: 1; background: transparent; border: none; color: #fff; padding: 10px; outline: none; font-size: 16px; }
+        .icon-btn { background: none; border: none; color: #c4c7c5; cursor: pointer; padding: 8px; display: flex; align-items: center; transition: 0.2s;}
+        .icon-btn:hover { color: #fff; }
+
+        #image-preview-container { display: none; position: absolute; bottom: 85px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 760px; background: #1e1f20; padding: 12px; border-radius: 16px; border: 1px solid #444746; z-index: 99; }
+        #image-preview { max-height: 70px; border-radius: 8px; }
+        .remove-img-btn { position: absolute; top: -8px; right: -8px; background: #ff4a4a; color: white; border: none; border-radius: 50%; width: 22px; height: 22px; cursor: pointer; font-size: 12px; display: flex; justify-content: center; align-items: center; }
+    </style>
+</head>
+<body>
+
+    <div id="auth-overlay">
+        <div id="view-accounts" class="auth-card" style="display: none;">
+            <h1>Morais AI</h1><p>Bem-vindo de volta!</p>
+            <div id="saved-accounts-container" class="account-list"></div>
+            <div class="divider">ou</div>
+            <span class="link-text" onclick="showView('view-login')">Usar outra conta</span>
+        </div>
+
+        <div id="view-login" class="auth-card" style="display: none;">
+            <h1 id="login-title">Entrar</h1><p>Acede à tua conta Morais AI</p>
+            <div class="google-btn-container"><div id="g_id_onload" data-client_id="314184167979-drqft3ldcshj3vn1730dtt0er1ha9spd.apps.googleusercontent.com" data-callback="handleCredentialResponse"></div><div class="g_id_signin" data-type="standard" data-shape="pill" data-theme="outline" data-size="large"></div></div>
+            <div class="divider">ou usa o email</div>
+            <div class="input-group"><input type="text" id="login-id" placeholder="Email ou Username"></div>
+            <div class="input-group"><input type="password" id="login-pass" placeholder="Password"></div>
+            <button class="primary-btn" onclick="manualLogin()">Entrar</button>
+            <br><span class="link-text" onclick="showView('view-register')">És novo? Cria uma conta</span>
+        </div>
+
+        <div id="view-register" class="auth-card" style="display: none;">
+            <h1>Criar Conta</h1><p>Regista-te em segundos</p>
+            <div class="google-btn-container"><div class="g_id_signin" data-type="standard" data-shape="pill" data-theme="outline" data-size="large"></div></div>
+            <div class="divider">ou preenche os dados</div>
+            <div class="input-group"><input type="email" id="reg-email" placeholder="Email"></div>
+            <div class="input-group"><input type="text" id="reg-user" placeholder="Username"></div>
+            <div class="input-group"><input type="password" id="reg-pass" placeholder="Password"></div>
+            <button class="primary-btn" onclick="manualRegister()">Criar Conta Grátis</button>
+            <br><span class="link-text" onclick="showView('view-login')">Já tens conta? Login</span>
+        </div>
+    </div>
+
+    <div id="main-app">
+        <div class="sidebar">
+            <button class="new-chat-btn" style="background:#131314; border:1px solid #444; color:#fff; padding:12px; border-radius:20px; cursor:pointer;" onclick="location.reload()">+ Novo Chat</button>
+            <div id="history-list" style="flex:1; overflow-y:auto;"></div>
+            <div style="margin-top:auto; padding-top:15px; border-top:1px solid #444; display:flex; justify-content:space-between; align-items:center;">
+                <span id="active-user-name" style="font-size:13px; color:#8e918f;"></span>
+                <button onclick="location.reload()" style="background:none; border:none; color:#ff4a4a; cursor:pointer; font-size:11px; font-weight:bold;">SAIR</button>
+            </div>
+        </div>
+        <div class="main-content">
+            <div id="chat-box" class="chat-container"></div>
+            
+            <div id="image-preview-container">
+                <button class="remove-img-btn" onclick="removeImg()">✕</button>
+                <img id="image-preview" src="">
+            </div>
+
+            <div class="input-wrapper">
+                <input type="file" id="file-input" style="display:none;" accept="image/*">
+                
+                <button class="icon-btn" onclick="document.getElementById('file-input').click()" title="Anexar Imagem">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                </button>
+                
+                <input type="text" id="user-input" placeholder="Pergunta ou pede para gerar uma imagem..." onkeypress="if(event.key==='Enter')sendMessage()">
+                
+                <button class="icon-btn" onclick="sendMessage()" title="Enviar">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let users = JSON.parse(localStorage.getItem('morais_users')) || [];
+        let currentUser = null;
+
+        function showView(viewId) {
+            document.getElementById('view-accounts').style.display = 'none';
+            document.getElementById('view-login').style.display = 'none';
+            document.getElementById('view-register').style.display = 'none';
+            document.getElementById(viewId).style.display = 'block';
+            if(viewId === 'view-accounts') renderPicker();
+        }
+
+        function renderPicker() {
+            const container = document.getElementById('saved-accounts-container');
+            container.innerHTML = '';
+            if(users.length === 0) { showView('view-register'); return; }
+            
+            users.forEach(u => {
+                const div = document.createElement('div');
+                div.className = 'account-item';
+                div.innerHTML = `<div class="account-avatar">${u.user[0].toUpperCase()}</div><div><strong>${u.user}</strong><br><small style="color:#8e918f">${u.email}</small></div>`;
+                div.onclick = () => {
+                    document.getElementById('login-id').value = u.email;
+                    showView('view-login');
+                    document.getElementById('login-title').innerText = "Olá, " + u.user;
+                };
+                container.appendChild(div);
+            });
+        }
+
+        function handleCredentialResponse(response) {
+            const payload = JSON.parse(atob(response.credential.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+            let found = users.find(u => u.email === payload.email);
+            if (!found) {
+                found = { email: payload.email, user: payload.name, pass: 'google-auth' };
+                users.push(found);
+                localStorage.setItem('morais_users', JSON.stringify(users));
+            }
+            loginFinal(found);
+        }
+
+        function manualRegister() {
+            const email = document.getElementById('reg-email').value, user = document.getElementById('reg-user').value, pass = document.getElementById('reg-pass').value;
+            if(!email || !user || !pass) return alert("Preenche todos os campos!");
+            if(users.find(u => u.email === email)) return alert("Este email já tem conta!");
+            users.push({ email, user, pass }); localStorage.setItem('morais_users', JSON.stringify(users));
+            alert("Conta criada!"); showView('view-accounts');
+        }
+
+        function manualLogin() {
+            const id = document.getElementById('login-id').value, pass = document.getElementById('login-pass').value;
+            const found = users.find(u => (u.email === id || u.user === id) && u.pass === pass);
+            if(found) loginFinal(found); else alert("Dados inválidos!");
+        }
+
+        function loginFinal(userObj) {
+            currentUser = userObj;
+            document.getElementById('auth-overlay').style.display = 'none';
+            document.getElementById('main-app').style.display = 'flex';
+            document.getElementById('active-user-name').innerText = userObj.user;
+            appendUI(`Olá ${userObj.user}! Como posso ajudar-te hoje? Experimenta pedir-me para desenhar algo!`, 'ia');
+        }
+
+        /* --- LÓGICA DE FOTOS E CHAT --- */
+        let currentImg = null;
+        document.getElementById('file-input').addEventListener('change', function() {
+            if(this.files[0]) {
+                const r = new FileReader();
+                r.onload = (e) => {
+                    currentImg = e.target.result;
+                    document.getElementById('image-preview').src = currentImg;
+                    document.getElementById('image-preview-container').style.display = 'block';
+                };
+                r.readAsDataURL(this.files[0]);
+            }
+        });
+
+        function removeImg() {
+            currentImg = null;
+            document.getElementById('image-preview-container').style.display = 'none';
+            document.getElementById('file-input').value = "";
+        }
+
+        async function sendMessage() {
+            const inp = document.getElementById('user-input');
+            const text = inp.value.trim();
+            if(!text && !currentImg) return;
+            
+            const imgToSend = currentImg;
+            appendUI(text, 'user', '', imgToSend);
+            inp.value = ''; removeImg();
+            
+            const loadId = 'l' + Date.now();
+            appendUI('A pensar...', 'ia', loadId);
+            
+            try {
+                const res = await fetch('/chat', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ msg: text, image: imgToSend })
+                });
+                const data = await res.json();
+                document.getElementById(loadId).remove();
+                appendUI(data.resposta, 'ia');
+            } catch (e) { document.getElementById(loadId).innerText = "Erro na ligação."; }
+        }
+
+        function appendUI(t, type, id='', img=null) {
+            const r = document.createElement('div');
+            r.className = `message-row ${type}`;
+            if(id) r.id = id;
+            r.innerHTML = `<div class="avatar">${type==='ia'?'✨':'👤'}</div><div class="message-content">${img?`<img src="${img}" style="max-width:100%; border-radius:12px; margin-bottom:10px;"><br>`:''}${t}</div>`;
+            document.getElementById('chat-box').appendChild(r);
+            document.getElementById('chat-box').scrollTop = document.getElementById('chat-box').scrollHeight;
+        }
+
+        showView('view-accounts');
+    </script>
+</body>
+</html>
