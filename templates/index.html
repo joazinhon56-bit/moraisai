@@ -3,139 +3,147 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Morais AI - Autenticação</title>
+    <title>Morais AI - Chat</title>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
-        /* Estilos de Base [cite: 1, 2] */
-        body { font-family: 'Inter', 'Segoe UI', sans-serif; background-color: #0a0a0a; color: white; margin: 0; height: 100vh; display: flex; justify-content: center; align-items: center; }
+        /* Estilos de Base e Layout */
+        body { font-family: 'Inter', sans-serif; background-color: #0a0a0a; color: white; margin: 0; display: flex; height: 100vh; overflow: hidden; }
         
-        /* Contentor de Login [cite: 3, 4] */
-        #login-container { background-color: #161616; padding: 40px; border-radius: 20px; border: 1px solid #2d2d2d; text-align: center; width: 350px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        #main-container { display: none; flex-direction: column; width: 100%; height: 100vh; background-color: #0f0f0f; }
+        /* Barra Lateral (Histórico) */
+        #sidebar { width: 260px; background-color: #111; border-right: 1px solid #2d2d2d; display: flex; flex-direction: column; transition: 0.3s; }
+        .sidebar-header { padding: 20px; }
+        .btn-new-chat { width: 100%; background: #222; border: 1px solid #333; color: white; padding: 12px; border-radius: 10px; cursor: pointer; text-align: left; font-size: 14px; transition: 0.2s; }
+        .btn-new-chat:hover { background: #2d2d2d; }
+        
+        #history-list { flex: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 5px; }
+        .history-item { padding: 10px; border-radius: 8px; font-size: 13px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #ccc; transition: 0.2s; }
+        .history-item:hover { background: #222; color: white; }
+        .history-item.active { background: #007bff33; color: #007bff; border: 1px solid #007bff55; }
 
-        h2 { margin-bottom: 10px; font-size: 24px; color: #fff; }
-        p { color: #888; font-size: 14px; margin-bottom: 25px; }
+        /* Área Principal */
+        #main-wrapper { flex: 1; display: flex; flex-direction: column; background-color: #0f0f0f; position: relative; }
+        #login-container { position: absolute; inset: 0; background: #0a0a0a; z-index: 100; display: flex; justify-content: center; align-items: center; }
+        .login-box { background-color: #161616; padding: 40px; border-radius: 20px; border: 1px solid #2d2d2d; text-align: center; width: 350px; }
 
-        /* Inputs [cite: 8, 9] */
-        input.auth-input { width: 100%; padding: 14px; margin: 8px 0; border-radius: 10px; border: 1px solid #333; background: #222; color: white; box-sizing: border-box; outline: none; transition: 0.3s; }
-        input.auth-input:focus { border-color: #007bff; }
-
-        /* Botões [cite: 11, 12] */
-        .btn-primary { width: 100%; background-color: #007bff; color: white; padding: 14px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; margin-top: 10px; font-size: 16px; transition: 0.2s; }
-        .btn-primary:hover { background-color: #0056b3; }
-
-        /* Contentor do Botão Google */
-        .google-btn-wrapper { margin-top: 20px; display: flex; justify-content: center; }
-
-        /* Interface do Chat [cite: 19, 20] */
+        /* Chat e Inputs */
+        .top-bar { padding: 15px 25px; border-bottom: 1px solid #2d2d2d; display: flex; justify-content: space-between; align-items: center; }
         #chat-container { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; }
         .message { max-width: 85%; padding: 14px; border-radius: 15px; font-size: 15px; line-height: 1.5; }
         .user { align-self: flex-end; background-color: #007bff; border-bottom-right-radius: 2px; }
         .ia { align-self: flex-start; background-color: #222; border: 1px solid #333; border-bottom-left-radius: 2px; }
 
-        #input-area { padding: 20px; background-color: #161616; display: flex; gap: 10px; border-top: 1px solid #2d2d2d; }
-        #user-input { flex: 1; padding: 12px 20px; border-radius: 25px; border: 1px solid #333; background: #222; color: white; outline: none; }
+        #input-area-container { padding: 20px; max-width: 800px; margin: 0 auto; width: 90%; }
+        .input-box { background: #161616; border: 1px solid #2d2d2d; border-radius: 25px; display: flex; align-items: center; padding: 10px 20px; gap: 10px; }
+        #user-input { flex: 1; background: none; border: none; color: white; outline: none; padding: 10px; }
         
-        .btn-nav { background: #333; color: white; padding: 8px 15px; border-radius: 20px; border: none; cursor: pointer; font-size: 12px; }
-        .top-bar { padding: 10px 20px; background: #161616; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2d2d2d; }
+        .btn-auth-action { width: 100%; background: #007bff; color: white; border: none; padding: 12px; border-radius: 10px; margin-top: 10px; cursor: pointer; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <div id="login-container">
-        <h2 id="auth-title">Entrar no Morais AI</h2>
-        <p id="auth-subtitle">Bem-vindo de volta, explorador.</p>
-        
-        <input type="text" id="username" class="auth-input" placeholder="Nome de utilizador">
-        <input type="password" id="password" class="auth-input" placeholder="Palavra-passe">
-        
-        <button class="btn-primary" id="btn-auth-action" onclick="processarAuth()">Entrar</button>
-
-        <div class="google-btn-wrapper">
-            <div id="g_id_onload"
-                 data-client_id="314184167979-drqft3ldcshj3vn1730dtt0er1ha9spd.apps.googleusercontent.com"
-                 data-callback="handleCredentialResponse"
-                 data-auto_prompt="false">
+    <aside id="sidebar">
+        <div class="sidebar-header">
+            <button class="btn-new-chat" onclick="novoChat()">+ Novo Chat</button>
+        </div>
+        <div id="history-list">
             </div>
-            <div class="g_id_signin" data-type="standard" data-shape="rectangular" data-theme="outline" data-text="signin_with" data-size="large" data-logo_alignment="left"></div>
+    </aside>
+
+    <main id="main-wrapper">
+        <div id="login-container">
+            <div class="login-box">
+                <h2>Morais AI</h2>
+                <p>Explora o futuro da inteligência.</p>
+                <input type="text" id="username" class="btn-new-chat" style="margin-bottom: 10px; cursor: text;" placeholder="Nome de utilizador">
+                <button class="btn-auth-action" onclick="processarAuth()">Entrar</button>
+                <div style="margin-top: 15px;">
+                    <div id="g_id_onload" data-client_id="314184167979-drqft3ldcshj3vn1730dtt0er1ha9spd.apps.googleusercontent.com" data-callback="handleCredentialResponse"></div>
+                    <div class="g_id_signin" data-type="standard"></div>
+                </div>
+            </div>
         </div>
 
-        <div class="toggle-link" id="toggle-text" style="margin-top: 20px; font-size: 13px; color: #888;">
-            Não tens conta? <span onclick="alternarModo()" style="color: #007bff; cursor: pointer; font-weight: bold;">Criar conta agora</span>
-        </div>
-    </div>
-
-    <div id="main-container">
         <div class="top-bar">
             <span id="display-user" style="font-weight: bold; color: #007bff;"></span>
-            <div>
-                <button class="btn-nav" onclick="novoChat()" style="margin-right: 10px;">+ Novo Chat</button>
-                <button class="btn-nav" onclick="fazerLogout()" style="background: #c82333;">Sair</button>
-            </div>
+            <button onclick="fazerLogout()" style="background: none; border: none; color: #888; cursor: pointer; font-size: 12px;">Sair</button>
         </div>
-        
+
         <div id="chat-container"></div>
 
-        <div id="input-area">
-            <input type="file" id="file-input" style="display: none;" accept="image/*" onchange="previewImg()">
-            <button onclick="document.getElementById('file-input').click()" style="background: none; border: none; cursor: pointer; font-size: 20px;">📷</button>
-            <input type="text" id="user-input" placeholder="Escreve uma mensagem..." onkeypress="if(event.key==='Enter') enviarMensagem()">
-            <button class="btn-primary" style="width: auto; margin-top: 0;" onclick="enviarMensagem()">Enviar</button>
+        <div id="input-area-container">
+            <div class="input-box">
+                <input type="file" id="file-input" style="display: none;" accept="image/*" onchange="previewImg()">
+                <button onclick="document.getElementById('file-input').click()" style="background: none; border: none; cursor: pointer; font-size: 18px;">📷</button>
+                <input type="text" id="user-input" placeholder="Pergunta-me qualquer coisa..." onkeypress="if(event.key==='Enter') enviarMensagem()">
+                <button onclick="enviarMensagem()" style="background: none; border: none; cursor: pointer; font-size: 18px;">🚀</button>
+            </div>
         </div>
-    </div>
+    </main>
 
     <script>
-        let modoRegistro = false;
+        let currentSessionId = null;
         let fotoData = null;
 
         window.onload = () => {
             const user = localStorage.getItem('morais_user');
-            if (user) entrarNoSistema(user);
+            if (user) {
+                entrarNoSistema(user);
+                carregarListaSessoes();
+                novoChat();
+            }
         };
 
-        // Lógica de Autenticação Google Real
-        function handleCredentialResponse(response) {
-            const base64Url = response.credential.split('.')[1];
-            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-            const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
-                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-            }).join(''));
-
-            const data = JSON.parse(jsonPayload);
-            localStorage.setItem('morais_user', data.name);
-            entrarNoSistema(data.name);
+        // GESTÃO DE SESSÕES (HISTÓRICO)
+        function carregarListaSessoes() {
+            const historyList = document.getElementById('history-list');
+            const sessions = JSON.parse(localStorage.getItem('morais_sessions')) || [];
+            historyList.innerHTML = '';
+            
+            sessions.reverse().forEach(session => {
+                const div = document.createElement('div');
+                div.className = `history-item ${session.id === currentSessionId ? 'active' : ''}`;
+                div.innerText = session.title || "Conversa sem título";
+                div.onclick = () => abrirSessao(session.id);
+                historyList.appendChild(div);
+            });
         }
 
-        function entrarNoSistema(nome) {
-            document.getElementById('login-container').style.display = 'none';
-            document.getElementById('main-container').style.display = 'flex';
-            document.getElementById('display-user').innerText = "@" + nome;
-            carregarHistorico();
+        function novoChat() {
+            currentSessionId = Date.now().toString();
+            document.getElementById('chat-container').innerHTML = '';
+            appendMessage("Olá! Sou o **Morais AI**. Como posso ajudar-te hoje?", 'ia', false);
+            carregarListaSessoes();
         }
 
-        function processarAuth() {
-            const user = document.getElementById('username').value;
-            if (user.trim().length < 3) return alert("Insere um nome válido!");
-            localStorage.setItem('morais_user', user);
-            entrarNoSistema(user);
-        }
-
-        function fazerLogout() {
-            localStorage.removeItem('morais_user');
-            location.reload();
-        }
-
-        function carregarHistorico() {
-            const hist = JSON.parse(localStorage.getItem('morais_hist')) || [];
+        function abrirSessao(id) {
+            currentSessionId = id;
+            const sessions = JSON.parse(localStorage.getItem('morais_sessions')) || [];
+            const session = sessions.find(s => s.id === id);
+            
             const container = document.getElementById('chat-container');
             container.innerHTML = '';
-            if (hist.length === 0) {
-                appendMessage("Olá! Sou o **Morais AI**. Como posso ajudar-te hoje?", 'ia', false);
-            } else {
-                hist.forEach(m => appendMessage(m.text, m.type, false));
+            
+            if (session && session.messages) {
+                session.messages.forEach(m => appendMessage(m.text, m.type, false));
             }
+            carregarListaSessoes();
         }
 
+        function salvarMensagemNaSessao(text, type) {
+            let sessions = JSON.parse(localStorage.getItem('morais_sessions')) || [];
+            let session = sessions.find(s => s.id === currentSessionId);
+            
+            if (!session) {
+                session = { id: currentSessionId, title: text.substring(0, 30) + "...", messages: [] };
+                sessions.push(session);
+            }
+            
+            session.messages.push({ text, type });
+            localStorage.setItem('morais_sessions', JSON.stringify(sessions));
+            carregarListaSessoes();
+        }
+
+        // LÓGICA DE ENVIO E INTERFACE
         function appendMessage(text, type, save = true) {
             const container = document.getElementById('chat-container');
             const div = document.createElement('div');
@@ -143,19 +151,17 @@
             div.innerHTML = text;
             container.appendChild(div);
             container.scrollTop = container.scrollHeight;
-            if (save) {
-                const hist = JSON.parse(localStorage.getItem('morais_hist')) || [];
-                hist.push({ text, type });
-                localStorage.setItem('morais_hist', JSON.stringify(hist));
-            }
+            if (save) salvarMensagemNaSessao(text, type);
         }
 
         async function enviarMensagem() {
             const input = document.getElementById('user-input');
             const msg = input.value.trim();
             if (!msg && !fotoData) return;
+
             if (msg) appendMessage(msg, 'user');
             input.value = '';
+
             try {
                 const res = await fetch('/chat', {
                     method: 'POST',
@@ -166,29 +172,39 @@
                 appendMessage(data.resposta, 'ia');
                 fotoData = null;
             } catch (e) {
-                appendMessage("Erro na ligação ao servidor.", 'ia');
+                appendMessage("Erro na ligação ao servidor.", 'ia', false);
             }
         }
 
+        // FUNÇÕES DE AUTH (MANTIDAS)
+        function handleCredentialResponse(response) {
+            const payload = JSON.parse(atob(response.credential.split('.')[1]));
+            localStorage.setItem('morais_user', payload.name);
+            entrarNoSistema(payload.name);
+        }
+
+        function entrarNoSistema(nome) {
+            document.getElementById('login-container').style.display = 'none';
+            document.getElementById('display-user').innerText = "@" + nome;
+        }
+
+        function processarAuth() {
+            const user = document.getElementById('username').value;
+            if (user.trim().length < 3) return alert("Insere um nome!");
+            localStorage.setItem('morais_user', user);
+            entrarNoSistema(user);
+        }
+
+        function fazerLogout() { localStorage.clear(); location.reload(); }
+        
         function previewImg() {
             const file = document.getElementById('file-input').files[0];
             const reader = new FileReader();
             reader.onload = (e) => { 
                 fotoData = e.target.result;
-                appendMessage("<i>[Imagem carregada para análise]</i>", 'user'); 
+                appendMessage("<i>[Imagem carregada]</i>", 'user'); 
             };
-            reader.readAsDataURL(file);
-        }
-
-        function novoChat() {
-            localStorage.removeItem('morais_hist');
-            carregarHistorico();
-        }
-
-        function alternarModo() {
-            modoRegistro = !modoRegistro;
-            document.getElementById('auth-title').innerText = modoRegistro ? "Criar Nova Conta" : "Entrar no Morais AI";
-            document.getElementById('btn-auth-action').innerText = modoRegistro ? "Registar" : "Entrar";
+            reader.readAsAsDataURL(file);
         }
     </script>
 </body>
