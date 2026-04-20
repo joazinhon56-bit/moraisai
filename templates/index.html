@@ -33,28 +33,67 @@
         /* Interface do Chat */
         .top-bar { padding: 15px 25px; background: #161616; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2d2d2d; }
         #chat-container { flex: 1; overflow-y: auto; padding: 25px; display: flex; flex-direction: column; gap: 15px; }
-        .message { max-width: 80%; padding: 15px; border-radius: 18px; font-size: 15px; line-height: 1.6; }
-        .user { align-self: flex-end; background: #007bff; border-bottom-right-radius: 4px; }
-        .ia { align-self: flex-start; background: #222; border: 1px solid #333; border-bottom-left-radius: 4px; }
+        .message { max-width: 80%; 
+    padding: 15px 20px; 
+    border-radius: 22px; 
+    font-size: 15px; 
+    line-height: 1.6; 
+    margin-bottom: 5px; }
+        .user { align-self: flex-end; 
+    background-color: #2e3034; 
+    color: white; 
+    border-bottom-right-radius: 4px; }
+        .ia { align-self: flex-start; 
+    background: #1e1f20; 
+    color: #efefef; 
+    border: 1px solid #3d3d3d; 
+    border-bottom-left-radius: 4px; }
         
-        #input-area { padding: 20px; display: flex; gap: 10px; background: #161616; border-top: 1px solid #2d2d2d; align-items: center; }
+        #input-area { margin: 0 20px 20px 20px;
+    background-color: #1e1f20; 
+    border-radius: 28px; 
+    padding: 10px 20px;
+    border: 1px solid #3d3d3d;
+    display: flex;
+    align-items: center;
+    gap: 10px; }
         .chat-img-render { max-width: 100%; border-radius: 12px; margin-top: 10px; display: block; }
     </style>
 </head>
 <body>
 
     <div id="login-card" class="auth-card" style="display: block;">
-        <h2>Entrar</h2>
-        <p>Acede à tua conta Morais AI</p>
-        <input type="text" id="login-id" class="auth-input" placeholder="Username ou Email">
-        <input type="password" id="login-pass" class="auth-input" placeholder="Password">
-        <button class="btn-primary" onclick="processarLogin()">Entrar</button>
-        <div class="divider">OU</div>
-        <button class="btn-google" onclick="loginGoogle()">
-            <img src="https://fonts.gstatic.com/s/i/productlogos/googleg/v6/24px.svg"> Entrar com Google
-        </button>
-        <div class="toggle-text">És novo? <span onclick="irParaRegisto()">Cria uma conta</span></div>
-    </div>
+    <h2>Entrar</h2>
+    <p>Acede à tua conta Morais AI</p>
+    <input type="text" id="login-id" class="auth-input" placeholder="Username ou Email">
+    <input type="password" id="login-pass" class="auth-input" placeholder="Password">
+    <button class="btn-primary" onclick="processarLogin()">Entrar</button>
+    
+    <div class="divider">OU</div>
+    
+    <button class="btn-google" onclick="loginGoogle()">
+        <img src="https://fonts.gstatic.com/s/i/productlogos/googleg/v6/24px.svg" width="18"> Entrar com Google
+    </button>
+    <div class="toggle-text">És novo? <span onclick="irParaRegisto()">Cria uma conta</span></div>
+</div>
+
+<div id="register-card" class="auth-card" style="display: none;">
+    <h2>Criar Conta</h2>
+    <p>Regista-te para começar a usar a IA</p>
+    
+    <button class="btn-google" onclick="loginGoogle()">
+        <img src="https://fonts.gstatic.com/s/i/productlogos/googleg/v6/24px.svg" width="18"> Criar com Google
+    </button>
+    
+    <div class="divider">OU USA O TEU EMAIL</div>
+    
+    <input type="email" id="reg-email" class="auth-input" placeholder="O teu Gmail">
+    <input type="text" id="reg-user" class="auth-input" placeholder="Escolhe um Username">
+    <input type="password" id="reg-pass" class="auth-input" placeholder="Cria uma Password">
+    <button class="btn-primary" onclick="processarRegisto()">Criar Minha Conta</button>
+    
+    <div class="toggle-text">Já tens conta? <span onclick="irParaLogin()">Fazer Login</span></div>
+</div>
 
     <div id="register-card" class="auth-card">
         <h2>Criar Conta</h2>
@@ -88,6 +127,72 @@
     </div>
 
     <script>
+        // 1. FUNÇÕES DE NAVEGAÇÃO (Trocar ecrãs)
+function irParaRegisto() {
+    document.getElementById('login-card').style.display = 'none';
+    document.getElementById('register-card').style.display = 'block';
+}
+
+function irParaLogin() {
+    document.getElementById('register-card').style.display = 'none';
+    document.getElementById('login-card').style.display = 'block';
+}
+
+// 2. LÓGICA DE SESSÃO (Verifica se já estás logado ao abrir)
+window.onload = () => {
+    const user = localStorage.getItem('morais_user');
+    if (user) entrarNoSistema(user);
+};
+
+function entrarNoSistema(nome) {
+    // Esconde todos os ecrãs de login/registo e mostra o chat
+    document.getElementById('login-card').style.display = 'none';
+    document.getElementById('register-card').style.display = 'none';
+    document.getElementById('main-container').style.display = 'flex';
+    document.getElementById('user-tag').innerText = "@" + nome;
+    carregarHistorico();
+}
+
+// 3. PROCESSAR LOGIN E REGISTO
+function processarLogin() {
+    const id = document.getElementById('login-id').value;
+    if(id) { 
+        localStorage.setItem('morais_user', id); 
+        entrarNoSistema(id); 
+    }
+}
+
+function processarRegisto() {
+    const email = document.getElementById('reg-email').value;
+    const user = document.getElementById('reg-user').value;
+    const pass = document.getElementById('reg-pass').value;
+
+    // Validação simples: tem de ter @ no email e um username
+    if(email.includes('@') && user.length >= 3) {
+        localStorage.setItem('morais_user', user);
+        entrarNoSistema(user);
+    } else {
+        alert("Dados inválidos! Garante que o Gmail tem '@' e o Username tem pelo menos 3 letras.");
+    }
+}
+
+// 4. HISTÓRICO (Para não perder as conversas)
+function carregarHistorico() {
+    const hist = JSON.parse(localStorage.getItem('morais_hist')) || [];
+    const container = document.getElementById('chat-container');
+    container.innerHTML = ''; 
+    if (hist.length === 0) {
+        appendMessage("Olá! Sou o Morais AI. Como posso ajudar-te hoje?", 'ia', false);
+    } else {
+        hist.forEach(m => appendMessage(m.text, m.type, false));
+    }
+}
+
+function guardarNoHistorico(text, type) {
+    const hist = JSON.parse(localStorage.getItem('morais_hist')) || [];
+    hist.push({ text, type });
+    localStorage.setItem('morais_hist', JSON.stringify(hist));
+}
         let fotoData = null;
 
         // --- NAVEGAÇÃO ---
@@ -100,12 +205,6 @@
             if (user) entrar(user);
         };
 
-        function entrar(nome) {
-            document.querySelectorAll('.auth-card').forEach(c => c.style.display = 'none');
-            document.getElementById('main-container').style.display = 'flex';
-            document.getElementById('user-tag').innerText = "@" + nome;
-            carregarHistorico();
-        }
 
         function processarLogin() {
             const id = document.getElementById('login-id').value;
@@ -122,17 +221,7 @@
         function loginGoogle() { const u = "Explorador_Google"; localStorage.setItem('morais_user', u); entrar(u); }
         function fazerLogout() { localStorage.removeItem('morais_user'); location.reload(); }
 
-        // --- HISTÓRICO E MENSAGENS ---
-        function carregarHistorico() {
-            const hist = JSON.parse(localStorage.getItem('morais_hist')) || [];
-            const container = document.getElementById('chat-container');
-            container.innerHTML = '';
-            if (hist.length === 0) {
-                appendMessage("Olá! Sou o Morais AI. O que vamos criar hoje?", 'ia', false);
-            } else {
-                hist.forEach(m => appendMessage(m.text, m.type, false));
-            }
-        }
+        
 
         function appendMessage(text, type, save = true) {
             const container = document.getElementById('chat-container');
