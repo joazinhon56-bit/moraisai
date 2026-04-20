@@ -215,12 +215,20 @@
         };
 
         function entrarNoSistema(nome) {
-            document.getElementById('auth-screen').style.display = 'none';
-            document.getElementById('sidebar').style.display = 'flex';
-            document.getElementById('main-chat').style.display = 'flex';
-            document.getElementById('user-profile').innerText = nome[0].toUpperCase();
-            carregarHistorico();
-        }
+    // 1. Esconde a tela de login
+    document.getElementById('auth-screen').style.display = 'none';
+    
+    // 2. Mostra o chat e a barra lateral
+    document.getElementById('sidebar').style.display = 'flex';
+    document.getElementById('main-chat').style.display = 'flex';
+    
+    // 3. Coloca a inicial do teu nome no círculo do perfil
+    document.getElementById('user-profile').innerText = nome[0].toUpperCase();
+    
+    // 4. Carrega as conversas
+    carregarHistorico();
+    atualizarSidebar(); 
+}
 
         function processarLogin() {
             const u = document.getElementById('login-id').value;
@@ -306,10 +314,8 @@
                 appendMsg(data.resposta, 'ia');
             } catch(e) { appendMsg("Erro de conexão.", 'ia'); }
         }
-        function entrarNoSistema(nome) {
-    // ... o teu código de esconder ecrãs ...
-    atualizarSidebar(); // <-- ADICIONA ESTA LINHA AQUI
-}
+        
+
     </script>
 </body>
 </html>
