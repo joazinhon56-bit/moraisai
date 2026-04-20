@@ -3,304 +3,242 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Morais AI - Oficial</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title>Morais AI - Gemini Edition</title>
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
-        /* --- ESTILO GEMINI DARK MODE --- */
+        :root {
+            --bg-dark: #131314;
+            --sidebar-bg: #1e1f20;
+            --hover-color: #2e3034;
+            --text-main: #e3e3e3;
+            --accent-blue: #a8c7fa;
+        }
+
         body { 
             font-family: 'Inter', sans-serif; 
-            background-color: #131314; 
-            color: #e3e3e3; 
+            background-color: var(--bg-dark); 
+            color: var(--text-main); 
             margin: 0; 
             height: 100vh; 
             display: flex; 
-            justify-content: center; 
-            align-items: center; 
             overflow: hidden; 
         }
 
-        /* Cartões de Autenticação */
-        .auth-card { 
-            background-color: #1e1f20; 
-            padding: 40px; 
-            border-radius: 28px; 
-            border: 1px solid #333; 
-            text-align: center; 
-            width: 380px; 
-            box-shadow: 0 15px 40px rgba(0,0,0,0.4); 
-            display: none; 
+        /* --- AUTH CARDS --- */
+        .auth-overlay { position: fixed; inset: 0; background: var(--bg-dark); z-index: 1000; display: flex; justify-content: center; align-items: center; }
+        .auth-card { background: var(--sidebar-bg); padding: 40px; border-radius: 28px; width: 350px; text-align: center; border: 1px solid #333; }
+        input.auth-input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 10px; border: 1px solid #444; background: #131314; color: white; box-sizing: border-box; }
+        .btn-auth { width: 100%; padding: 12px; border-radius: 20px; border: none; background: var(--accent-blue); color: #062e6f; font-weight: bold; cursor: pointer; margin-top: 10px; }
+
+        /* --- SIDEBAR (BARRA LATERAL) --- */
+        #sidebar {
+            width: 280px;
+            background-color: var(--sidebar-bg);
+            display: none; /* Só aparece após login */
+            flex-direction: column;
+            padding: 16px;
+            transition: all 0.3s ease;
         }
 
-        #main-container { 
-            display: none; 
-            flex-direction: column; 
-            width: 100%; 
-            height: 100vh; 
+        .new-chat-btn {
+            background: #282a2d;
+            border: none;
+            color: var(--text-main);
+            padding: 12px 16px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            margin-bottom: 30px;
+            font-weight: 500;
+        }
+        .new-chat-btn:hover { background: var(--hover-color); }
+
+        .sidebar-section { flex: 1; overflow-y: auto; }
+        .section-title { font-size: 12px; font-weight: 600; color: #9aa0a6; margin-bottom: 12px; padding-left: 8px; }
+        
+        .recent-item {
+            padding: 10px 12px;
+            border-radius: 10px;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .recent-item:hover { background: var(--hover-color); }
+
+        .sidebar-bottom {
+            border-top: 1px solid #333;
+            padding-top: 16px;
+            font-size: 13px;
+            color: #9aa0a6;
+        }
+        .bottom-link { display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 8px; cursor: pointer; }
+        .bottom-link:hover { background: var(--hover-color); color: white; }
+
+        /* --- CONTEÚDO PRINCIPAL --- */
+        #main-chat {
+            flex: 1;
+            display: none;
+            flex-direction: column;
+            position: relative;
         }
 
-        h2 { font-size: 24px; font-weight: 600; margin-bottom: 8px; color: #fff; }
-        p { font-size: 14px; color: #9aa0a6; margin-bottom: 24px; }
+        .top-header { padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; }
+        #chat-window { flex: 1; overflow-y: auto; padding: 20px 15%; display: flex; flex-direction: column; gap: 24px; }
 
-        /* Inputs Estilizados */
-        input.auth-input { 
-            width: 100%; 
-            padding: 14px; 
-            margin: 8px 0; 
-            border-radius: 12px; 
-            border: 1px solid #444746; 
-            background: #131314; 
-            color: white; 
-            box-sizing: border-box; 
-            outline: none; 
-            font-size: 15px;
+        /* Balões Gemini */
+        .message { max-width: 90%; line-height: 1.6; font-size: 16px; }
+        .user { align-self: flex-end; background: #2e3034; padding: 12px 20px; border-radius: 20px; color: white; }
+        .ia { align-self: flex-start; display: flex; gap: 15px; }
+        .ia-avatar { width: 30px; height: 30px; background: linear-gradient(45deg, #4285f4, #9b72cb); border-radius: 50%; flex-shrink: 0; }
+
+        /* Barra de Escrita Flutuante */
+        .input-container { padding: 20px 15%; }
+        .input-wrapper {
+            background: #1e1f20;
+            border-radius: 28px;
+            padding: 8px 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            border: 1px solid #3c4043;
         }
-        input.auth-input:focus { border-color: #a8c7fa; }
+        #user-input { flex: 1; background: transparent; border: none; color: white; padding: 12px 0; outline: none; font-size: 16px; }
 
-        /* Botões */
-        .btn-primary { 
-            width: 100%; 
-            background-color: #a8c7fa; 
-            color: #062e6f; 
-            padding: 14px; 
-            border: none; 
-            border-radius: 100px; 
-            cursor: pointer; 
-            font-weight: 600; 
-            margin-top: 12px; 
-            font-size: 15px;
-            transition: background 0.2s;
-        }
-        .btn-primary:hover { background-color: #c2e7ff; }
-
-        .btn-google { 
-            width: 100%; 
-            background-color: #fff; 
-            color: #1f1f1f; 
-            padding: 12px; 
-            border-radius: 100px; 
-            border: none; 
-            cursor: pointer; 
-            font-weight: 500; 
-            margin-top: 10px; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            gap: 10px; 
-            font-size: 14px; 
-        }
-
-        .divider { margin: 24px 0; display: flex; align-items: center; color: #444746; font-size: 12px; }
-        .divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: #444746; margin: 0 10px; }
-
-        .toggle-text { margin-top: 20px; font-size: 14px; color: #9aa0a6; }
-        .toggle-text span { color: #a8c7fa; cursor: pointer; font-weight: 600; text-decoration: none; }
-        .toggle-text span:hover { text-decoration: underline; }
-
-        /* Interface do Chat */
-        .top-bar { 
-            padding: 16px 24px; 
-            background: #1e1f20; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            border-bottom: 1px solid #333; 
-        }
-
-        #chat-container { 
-            flex: 1; 
-            overflow-y: auto; 
-            padding: 24px; 
-            display: flex; 
-            flex-direction: column; 
-            gap: 16px; 
-        }
-
-        /* Mensagens Gemini Style */
-        .message { 
-            max-width: 85%; 
-            padding: 16px 20px; 
-            font-size: 15px; 
-            line-height: 1.6; 
-            word-wrap: break-word; 
-        }
-
-        .user { 
-            align-self: flex-end; 
-            background-color: #2e3034; 
-            color: #e3e3e3; 
-            border-radius: 24px 24px 4px 24px; 
-        }
-
-        .ia { 
-            align-self: flex-start; 
-            background-color: transparent; 
-            color: #e3e3e3; 
-            border-radius: 24px 24px 24px 4px; 
-            border: 1px solid #333;
-        }
-
-        /* Barra de Input Flutuante */
-        #input-area-wrapper {
-            padding: 0 24px 24px 24px;
-        }
-
-        #input-area { 
-            background-color: #1e1f20; 
-            border-radius: 32px; 
-            padding: 8px 16px; 
-            display: flex; 
-            align-items: center; 
-            gap: 12px; 
-            border: 1px solid #444746;
-        }
-
-        #user-input { 
-            flex: 1; 
-            padding: 12px; 
-            border: none; 
-            background: transparent; 
-            color: white; 
-            outline: none; 
-            font-size: 16px; 
-        }
-
-        .icon-btn { 
-            background: none; 
-            border: none; 
-            cursor: pointer; 
-            font-size: 20px; 
-            color: #a8c7fa; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center;
-        }
-
-        img.chat-img-render { max-width: 100%; border-radius: 12px; margin-top: 10px; }
+        .location-info { text-align: center; font-size: 12px; color: #9aa0a6; margin-top: 8px; }
     </style>
 </head>
 <body>
 
-    <div id="login-card" class="auth-card" style="display: block;">
-        <h2>Entrar</h2>
-        <p>Acede à tua conta Morais AI</p>
-        <input type="text" id="login-id" class="auth-input" placeholder="Username ou Email">
-        <input type="password" id="login-pass" class="auth-input" placeholder="Password">
-        <button class="btn-primary" onclick="processarLogin()">Entrar</button>
-        <div class="divider">OU</div>
-        <button class="btn-google" onclick="loginGoogle()">
-            <img src="https://fonts.gstatic.com/s/i/productlogos/googleg/v6/24px.svg" width="18"> Entrar com Google
-        </button>
-        <div class="toggle-text">És novo? <span onclick="irParaRegisto()">Cria uma conta</span></div>
-    </div>
-
-    <div id="register-card" class="auth-card">
-        <h2>Criar Conta</h2>
-        <p>Junta-te ao Morais AI hoje</p>
-        <button class="btn-google" onclick="loginGoogle()">
-            <img src="https://fonts.gstatic.com/s/i/productlogos/googleg/v6/24px.svg" width="18"> Criar com Google
-        </button>
-        <div class="divider">OU USA O TEU EMAIL</div>
-        <input type="email" id="reg-email" class="auth-input" placeholder="O teu Gmail">
-        <input type="text" id="reg-user" class="auth-input" placeholder="Username">
-        <input type="password" id="reg-pass" class="auth-input" placeholder="Password">
-        <button class="btn-primary" onclick="processarRegisto()">Criar Minha Conta</button>
-        <div class="toggle-text">Já tens conta? <span onclick="irParaLogin()">Fazer Login</span></div>
-    </div>
-
-    <div id="main-container">
-        <div class="top-bar">
-            <span id="user-tag" style="font-weight: 500; color: #a8c7fa;"></span>
-            <div>
-                <button onclick="novoChat()" style="background:transparent; border:1px solid #444; color:#fff; padding:6px 12px; border-radius:100px; cursor:pointer; font-size:12px; margin-right:8px;">+ Novo Chat</button>
-                <button onclick="fazerLogout()" style="background:#3c4043; border:none; color:#fff; padding:6px 12px; border-radius:100px; cursor:pointer; font-size:12px;">Sair</button>
-            </div>
+    <div id="auth-screen" class="auth-overlay">
+        <div id="login-card" class="auth-card">
+            <h2>Entrar</h2>
+            <input type="text" id="login-id" class="auth-input" placeholder="Utilizador">
+            <input type="password" id="login-pass" class="auth-input" placeholder="Palavra-passe">
+            <button class="btn-auth" onclick="processarLogin()">Entrar</button>
+            <p style="font-size:12px; margin-top:15px;">És novo? <span onclick="toggleAuth()" style="color:#a8c7fa; cursor:pointer;">Cria uma conta</span></p>
         </div>
-        
-        <div id="chat-container"></div>
-        
-        <div id="input-area-wrapper">
-            <div id="input-area">
-                <input type="file" id="file-input" style="display: none;" accept="image/*" onchange="previewImagem()">
-                <button class="icon-btn" onclick="document.getElementById('file-input').click()">📷</button>
-                <input type="text" id="user-input" placeholder="Pergunta ao Morais AI..." onkeypress="if(event.key==='Enter') enviar()">
-                <button class="icon-btn" onclick="enviar()">🚀</button>
-            </div>
+
+        <div id="register-card" class="auth-card" style="display:none;">
+            <h2>Criar Conta</h2>
+            <input type="email" id="reg-email" class="auth-input" placeholder="Gmail">
+            <input type="text" id="reg-user" class="auth-input" placeholder="Username">
+            <input type="password" id="reg-pass" class="auth-input" placeholder="Password">
+            <button class="btn-auth" onclick="processarRegisto()">Criar conta</button>
+            <p style="font-size:12px; margin-top:15px;">Já tens conta? <span onclick="toggleAuth()" style="color:#a8c7fa; cursor:pointer;">Faz login</span></p>
         </div>
     </div>
 
-  <script>
+    <nav id="sidebar">
+        <button class="new-chat-btn" onclick="novoChat()">
+            <span>+</span> Novo chat
+        </button>
+        
+        <div class="sidebar-section">
+            <div class="section-title">Recentes</div>
+            <div id="recent-list">
+                <div class="recent-item">🕒 Onde ver futebol?</div>
+                <div class="recent-item">🕒 Gerador de camelos</div>
+            </div>
+        </div>
+
+        <div class="sidebar-bottom">
+            <div class="bottom-link">💎 Gemini Advanced</div>
+            <div class="bottom-link">🕒 Atividade</div>
+            <div class="bottom-link">⚙️ Definições</div>
+            <div class="bottom-link" style="color:#9aa0a6; cursor:default;">
+                📍 Ponta Delgada, Açores
+            </div>
+        </div>
+    </nav>
+
+    <main id="main-chat">
+        <header class="top-header">
+            <div style="font-weight: 500;">Morais AI <span style="color:#9aa0a6; font-size:12px;">1.0</span></div>
+            <div id="user-profile" style="background:#4285f4; width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer;" onclick="fazerLogout()">U</div>
+        </header>
+
+        <div id="chat-window"></div>
+
+        <div class="input-container">
+            <div class="input-wrapper">
+                <input type="file" id="file-input" style="display:none;" onchange="previewImg()">
+                <button onclick="document.getElementById('file-input').click()" style="background:none; border:none; cursor:pointer; font-size:20px;">📷</button>
+                <input type="text" id="user-input" placeholder="Escreve aqui..." onkeypress="if(event.key==='Enter') enviar()">
+                <button onclick="enviar()" style="background:none; border:none; cursor:pointer; font-size:20px;">🚀</button>
+            </div>
+            <p class="location-info">Morais AI pode apresentar informações imprecisas, inclusive sobre pessoas. <span style="text-decoration:underline;">A tua privacidade e as Apps Gemini</span></p>
+        </div>
+    </main>
+
+    <script>
         let fotoData = null;
 
-        // 1. NAVEGAÇÃO
-        function irParaRegisto() {
-            document.getElementById('login-card').style.display = 'none';
-            document.getElementById('register-card').style.display = 'block';
-        }
-        function irParaLogin() {
-            document.getElementById('register-card').style.display = 'none';
-            document.getElementById('login-card').style.display = 'block';
+        function toggleAuth() {
+            const login = document.getElementById('login-card');
+            const reg = document.getElementById('register-card');
+            login.style.display = login.style.display === 'none' ? 'block' : 'none';
+            reg.style.display = reg.style.display === 'none' ? 'block' : 'none';
         }
 
-        // 2. SESSÃO
         window.onload = () => {
             const user = localStorage.getItem('morais_user');
             if (user) entrarNoSistema(user);
         };
 
         function entrarNoSistema(nome) {
-            document.getElementById('login-card').style.display = 'none';
-            document.getElementById('register-card').style.display = 'none';
-            document.getElementById('main-container').style.display = 'flex';
-            document.getElementById('user-tag').innerText = "@" + nome;
+            document.getElementById('auth-screen').style.display = 'none';
+            document.getElementById('sidebar').style.display = 'flex';
+            document.getElementById('main-chat').style.display = 'flex';
+            document.getElementById('user-profile').innerText = nome[0].toUpperCase();
             carregarHistorico();
         }
 
         function processarLogin() {
-            const user = document.getElementById('login-id').value;
-            if(user.trim() !== "") { 
-                localStorage.setItem('morais_user', user); 
-                entrarNoSistema(user); 
-            }
+            const u = document.getElementById('login-id').value;
+            if(u) { localStorage.setItem('morais_user', u); entrarNoSistema(u); }
         }
 
         function processarRegisto() {
-            const email = document.getElementById('reg-email').value;
-            const user = document.getElementById('reg-user').value;
-            if(email.includes('@') && user.trim() !== "") { 
-                localStorage.setItem('morais_user', user); 
-                entrarNoSistema(user); 
-            }
+            const u = document.getElementById('reg-user').value;
+            if(u) { localStorage.setItem('morais_user', u); entrarNoSistema(u); }
         }
 
-        function loginGoogle() { entrarNoSistema("User_Google"); }
-        function fazerLogout() { localStorage.removeItem('morais_user'); location.reload(); }
-
-        // 3. HISTÓRICO
         function carregarHistorico() {
             const hist = JSON.parse(localStorage.getItem('morais_hist')) || [];
-            const container = document.getElementById('chat-container');
-            container.innerHTML = '';
+            const win = document.getElementById('chat-window');
+            win.innerHTML = '';
             if (hist.length === 0) {
-                appendMessage("Olá! Sou o **Morais AI**. 🚀 Como posso ajudar-te hoje?", 'ia', false);
+                appendMsg("Olá! Como posso ajudar-te hoje?", 'ia', false);
             } else {
-                hist.forEach(m => appendMessage(m.text, m.type, false));
+                hist.forEach(m => appendMsg(m.text, m.type, false));
             }
         }
 
-        function guardarNoHistorico(text, type) {
-            const hist = JSON.parse(localStorage.getItem('morais_hist')) || [];
-            hist.push({ text, type });
-            localStorage.setItem('morais_hist', JSON.stringify(hist));
-        }
-
-        function appendMessage(text, type, save = true) {
-            const container = document.getElementById('chat-container');
+        function appendMsg(text, type, save = true) {
+            const win = document.getElementById('chat-window');
             const div = document.createElement('div');
             div.className = `message ${type}`;
-            div.innerHTML = text;
-            container.appendChild(div);
-            container.scrollTop = container.scrollHeight;
-            if (save) guardarNoHistorico(text, type);
+            
+            if (type === 'ia') {
+                div.innerHTML = `<div class="ia-avatar"></div><div>${text}</div>`;
+            } else {
+                div.innerText = text;
+            }
+
+            win.appendChild(div);
+            win.scrollTop = win.scrollHeight;
+            if (save) {
+                const hist = JSON.parse(localStorage.getItem('morais_hist')) || [];
+                hist.push({ text, type });
+                localStorage.setItem('morais_hist', JSON.stringify(hist));
+            }
         }
 
         function novoChat() {
@@ -308,33 +246,23 @@
             carregarHistorico();
         }
 
-        // 4. ENVIO E IMAGENS
-        function previewImagem() {
-            const file = document.getElementById('file-input').files[0];
-            const reader = new FileReader();
-            reader.onload = (e) => { 
-                fotoData = e.target.result; 
-                appendMessage("<i>[Imagem anexada]</i>", 'user'); 
-            };
-            reader.readAsDataURL(file);
-        }
+        function fazerLogout() { localStorage.clear(); location.reload(); }
 
         async function enviar() {
             const input = document.getElementById('user-input');
             const msg = input.value;
-            if(!msg && !fotoData) return;
-            if(msg) appendMessage(msg, 'user');
-            input.value = "";
+            if(!msg) return;
+            appendMsg(msg, 'user');
+            input.value = '';
             try {
                 const res = await fetch('/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ msg: msg, image: fotoData })
+                    body: JSON.stringify({ msg: msg })
                 });
                 const data = await res.json();
-                appendMessage(data.resposta, 'ia');
-                fotoData = null;
-            } catch(e) { appendMessage("Erro de ligação.", 'ia'); }
+                appendMsg(data.resposta, 'ia');
+            } catch(e) { appendMsg("Erro de conexão.", 'ia'); }
         }
     </script>
 </body>
