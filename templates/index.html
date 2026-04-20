@@ -175,24 +175,32 @@
         </div>
     </nav>
 
-    <main id="main-chat">
-        <header class="top-header">
-            <div style="font-weight: 500;">Morais AI <span style="color:#9aa0a6; font-size:12px;">1.0</span></div>
-            <div id="user-profile" style="background:#4285f4; width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer;" onclick="fazerLogout()">U</div>
-        </header>
+    <main id="main-chat" style="display:none;"> <header class="top-header">
+        <div style="font-weight: 500;">Morais AI <span style="color:#9aa0a6; font-size:12px;">1.0</span></div>
+        <div id="user-profile" style="background:#4285f4; width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer;" onclick="fazerLogout()">U</div>
+    </header>
 
-        <div id="chat-window"></div>
+    <div id="chat-window"></div>
 
-        <div class="input-container">
-            <div class="input-wrapper">
-                <input type="file" id="file-input" style="display:none;" onchange="previewImg()">
-                <button onclick="document.getElementById('file-input').click()" style="background:none; border:none; cursor:pointer; font-size:20px;">📷</button>
-                <input type="text" id="user-input" placeholder="Escreve aqui..." onkeypress="if(event.key==='Enter') enviar()">
-                <button onclick="enviar()" style="background:none; border:none; cursor:pointer; font-size:20px;">🚀</button>
-            </div>
-            <p class="location-info">Morais AI pode apresentar informações imprecisas, inclusive sobre pessoas. <span style="text-decoration:underline;">A tua privacidade e as Apps Gemini</span></p>
+    <div class="input-container">
+        <div class="input-wrapper">
+            <input type="file" id="image-input" accept="image/*" style="display: none;" onchange="handleImageSelect(event)">
+            
+            <button type="button" class="icon-btn" onclick="document.getElementById('image-input').click()">📷</button>
+            
+            <input type="text" id="user-input" placeholder="Escreve aqui..." onkeypress="if(event.key==='Enter') enviar()">
+            
+            <button type="button" class="icon-btn" onclick="enviar()">🚀</button>
         </div>
-    </main>
+
+        <div id="image-preview-container" style="display: none; margin-top: 10px; text-align: center;">
+            <img id="image-preview" src="" style="max-width: 100px; border-radius: 8px; border: 1px solid #444;">
+            <button onclick="removeImagePreview()" style="background:red; color:white; border:none; border-radius:50%; width:20px; height:20px; cursor:pointer; position:relative; top:-40px; right:-5px;">X</button>
+        </div>
+
+        <p class="location-info">Morais AI pode apresentar informações imprecisas. <span style="text-decoration:underline;">Privacidade</span></p>
+    </div>
+</main>
 
     <script>
         let fotoData = null;

@@ -71,3 +71,36 @@ strong {
     padding: 5px;
     font-size: 12px;
 }
+/* Garante que o chat ocupa o ecrã todo mas só aparece depois do login */
+#main-chat {
+    flex: 1;
+    display: none; /* ISTO ESCONDE A BARRA NO LOGIN */
+    flex-direction: column;
+}
+
+/* Estilo dos ícones da barra de input */
+.icon-btn {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: #a8c7fa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s;
+}
+
+.icon-btn:hover {
+    transform: scale(1.1);
+}
+
+.input-wrapper {
+    background: #1e1f20;
+    border-radius: 28px;
+    padding: 8px 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    border: 1px solid #3c4043;
+}
