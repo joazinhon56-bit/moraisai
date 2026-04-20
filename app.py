@@ -2,40 +2,38 @@ import os
 import urllib.parse
 import requests
 import base64
-from flask import Flask, render_template, request, jsonify, send_from_directory # Adicionei isto 
-from groq import Groq
+import google.generativeai as genai
+from flask import Flask, render_template, request, jsonify, send_from_directory
 
 app = Flask(__name__)
 
-# --- CONFIGURAÇÕES DE AMBIENTE ---
-# Estas chaves devem estar configuradas no painel do Render (Environment Variables)
-GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
-HF_TOKEN = os.environ.get("HF_TOKEN")
+# --- 1. CONFIGURAÇÃO GOOGLE GEMINI ---
+GOOGLE_API_KEY = "AIzaSyChjICCd4heMJzGI1i1iggDK1pkGCcX3hE"
+genai.configure(api_key=GOOGLE_API_KEY)
+# O modelo 1.5-flash é o melhor: rápido, gratuito e vê imagens!
+model_gemini = genai.GenerativeModel('gemini-1.5-flash')
 
-# URL do modelo de geração de imagem profissional (Hugging Face)
+# --- 2. CONFIGURAÇÃO GERAÇÃO DE IMAGENS (Hugging Face) ---
+HF_TOKEN = os.environ.get("HF_TOKEN")
 HF_API_URL = "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0"
 
 def gerar_imagem_ia(tema):
-    """Envia o pedido para a IA do Hugging Face e devolve a imagem em Base64."""
+    """Gera uma imagem via Hugging Face."""
     try:
         if not HF_TOKEN:
             return None
-        
-        # Prompt 'rico' para forçar a IA a desenhar com qualidade máxima
-        prompt_rico = f"An ultra-realistic, highly detailed photograph of {tema}, cinematic lighting, 8k resolution, photorealistic masterpiece, no text, no watermark."
-        
+        prompt_rico = f"An ultra-realistic photograph of {tema}, cinematic lighting, 8k resolution, photorealistic."
         headers = {"Authorization": f"Bearer {HF_TOKEN}"}
         payload = {"inputs": prompt_rico, "options": {"wait_for_model": True}}
-        
         response = requests.post(HF_API_URL, headers=headers, json=payload)
-        response.raise_for_status() # Verifica se houve erro na API
-        
-        # Converte os bytes da imagem para uma string que o navegador entende
+        response.raise_for_status()
         encoded_image = base64.b64encode(response.content).decode('utf-8')
         return f"data:image/jpeg;base64,{encoded_image}"
     except Exception as e:
-        print(f"Erro na geração de imagem (HF): {e}")
+        print(f"Erro HF: {e}")
         return None
+
+# --- 3. ROTAS ---
 
 @app.route('/')
 def index():
@@ -44,83 +42,53 @@ def index():
 @app.route('/chat', methods=['POST'])
 def chat():
     try:
-        if not GROQ_API_KEY:
-            return jsonify({"resposta": "Erro: GROQ_API_KEY não configurada no Render."})
-
-        client = Groq(api_key=GROQ_API_KEY)
         dados = request.json
         pergunta = dados.get('msg', '')
         imagem_b64 = dados.get('image')
-
         texto_min = pergunta.lower()
 
-        # --- 1. LÓGICA DE GERAÇÃO DE IMAGENS ---
-        gatilhos_imagem = [
-            "gera uma imagem", "gerar uma imagem", "gera imagem", "cria uma imagem", 
-            "criar uma imagem", "cria imagem", "desenha", "desenhar", "faz um desenho",
-            "podes desenhar", "imagina", "faz-me um"
-        ]
-
-        if any(gatilho in texto_min for gatilho in gatilhos_imagem):
-            # Limpa o pedido para focar apenas no tema
+        # --- LÓGICA DE GERAÇÃO DE IMAGENS ---
+        gatilhos = ["gera uma imagem", "cria uma imagem", "desenha", "faz um desenho"]
+        if any(g in texto_min for g in gatilhos):
             prompt_limpo = texto_min
-            for g in gatilhos_imagem:
-                prompt_limpo = prompt_limpo.replace(g, "")
-            prompt_limpo = prompt_limpo.replace(" de ", " ").replace(" um ", " ").replace(" uma ", " ").strip()
-            
-            if not prompt_limpo: prompt_limpo = "uma paisagem futurista"
-            
-            # Tenta gerar com a IA de alta qualidade (Hugging Face)
-            url_img = gerar_imagem_ia(prompt_limpo)
-            
+            for g in gatilhos: prompt_limpo = prompt_limpo.replace(g, "")
+            url_img = gerar_imagem_ia(prompt_limpo.strip() or "uma paisagem")
             if url_img:
-                return jsonify({
-                    "resposta": f"🎨 Aqui está a imagem de **{prompt_limpo}** que criei para ti:<br><img src='{url_img}' style='max-width:100%; border-radius:12px; margin-top:10px; border:1px solid #444;'>"
-                })
-            else:
-                # Backup rápido (Pollinations) se a IA principal falhar ou estiver ocupada
-                prompt_enc = urllib.parse.quote(prompt_limpo)
-                url_backup = f"https://image.pollinations.ai/prompt/{prompt_enc}?width=800&height=600&nologo=true"
-                return jsonify({
-                    "resposta": f"⚠️ A IA principal está ocupada, mas aqui tens um esboço rápido:<br><img src='{url_backup}' style='max-width:100%; border-radius:12px; margin-top:10px; border:1px solid #444;'>"
-                })
+                return jsonify({"resposta": f"🎨 Aqui está:<br><img src='{url_img}' style='max-width:100%; border-radius:12px; margin-top:10px;'>" })
 
-        # --- 2. LÓGICA DE CONVERSA (TEXTO E VISÃO) ---
-        system_prompt = (
-            "És o Morais AI. Responde sempre de forma extremamente organizada: "
-            "usa parágrafos curtos, listas com marcas (bullet points) e negrito em palavras-chave. "
-            "Sê profissional, prestável e nunca envies blocos de texto compactos."
-        )
-
+        # --- LÓGICA DE CONVERSA E VISÃO (Gemini) ---
+        contents = []
+        
+        # Se o utilizador enviou uma imagem para análise
         if imagem_b64:
-            # Usamos o modelo de VISÃO para analisar a foto
-            modelo = "llama-3.2-11b-vision-preview"
-            conteudo = [
-                {"type": "text", "text": pergunta or "O que vês nesta imagem?"},
-                {"type": "image_url", "image_url": {"url": imagem_b64}}
-            ]
-        else:
-            # Usamos o modelo de TEXTO normal
-            modelo = "llama-3.1-8b-instant"
-            conteudo = pergunta
-
-        completion = client.chat.completions.create(
-            model=modelo,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": conteudo}
-            ]
+            img_data = imagem_b64.split(",")[1] if "," in imagem_b64 else imagem_b64
+            contents.append({
+                "inline_data": {
+                    "mime_type": "image/png",
+                    "data": img_data
+                }
+            })
+        
+        # Prompt de personalidade + pergunta
+        prompt_final = (
+            "És o Morais AI. Responde de forma organizada com negritos e listas. "
+            f"Pergunta: {pergunta or 'O que vês nesta imagem?'}"
         )
+        contents.append(prompt_final)
 
-        return jsonify({"resposta": completion.choices[0].message.content})
+        # Resposta do Gemini
+        response = model_gemini.generate_content(contents)
+        return jsonify({"resposta": response.text})
 
     except Exception as e:
-        print(f"Erro no Servidor: {e}")
-        return jsonify({"resposta": f"Ops! Ocorreu um erro técnico: {str(e)}"})
+        print(f"Erro: {e}")
+        return jsonify({"resposta": f"Ops! Erro técnico: {str(e)}"})
 
+# --- UTILIDADES ---
 @app.route('/googleacfc2899a70cedc3.html')
 def google_verification():
     return "google-site-verification: googleacfc2899a70cedc3.html"
+
 @app.route('/manifest.json')
 def serve_manifest():
     return send_from_directory('static', 'manifest.json')
@@ -128,7 +96,7 @@ def serve_manifest():
 @app.route('/sw.js')
 def serve_sw():
     return send_from_directory('static', 'sw.js')
+
 if __name__ == '__main__':
-    # O Render fornece a porta automaticamente através da variável de ambiente PORT
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)

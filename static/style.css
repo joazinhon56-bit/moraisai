@@ -34,3 +34,40 @@ strong {
     color: #fff;
     font-weight: 700;
 }
+/* Ficheiro: index.html - dentro de <style> */
+/* ... restante CSS ... */
+
+#attach-image-btn {
+    background-color: #f0f0f0;
+    border: 1px solid #ccc;
+    padding: 8px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-right: 10px;
+}
+
+#image-preview-container {
+    margin-top: 10px;
+    position: relative;
+    display: inline-block;
+}
+
+#image-preview {
+    max-width: 150px;
+    max-height: 150px;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+}
+
+#image-preview-container button {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    background-color: red;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    padding: 5px;
+    font-size: 12px;
+}

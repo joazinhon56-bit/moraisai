@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Morais AI - Gemini Edition</title>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <meta name="google-site-verification" content="acfc2899a70cedc3" />
     <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -124,6 +126,21 @@
             <button class="btn-auth" onclick="processarLogin()">Entrar</button>
             <p style="font-size:12px; margin-top:15px;">És novo? <span onclick="toggleAuth()" style="color:#a8c7fa; cursor:pointer;">Cria uma conta</span></p>
         </div>
+        <div class="chat-input-area">
+    <input type="file" id="image-input" accept="image/*" style="display: none;">
+    
+    <button type="button" id="attach-image-btn" onclick="document.getElementById('image-input').click()">
+        📷 Anexar Imagem
+    </button>
+    
+    <input type="text" id="user-input" placeholder="Escreve a tua mensagem...">
+    <button type="submit" onclick="enviar()">Enviar</button>
+</div>
+
+<div id="image-preview-container" style="display: none;">
+    <img id="image-preview" src="" alt="Pré-visualização da imagem">
+    <button type="button" onclick="removeImagePreview()">❌</button>
+</div>
 
         <div id="register-card" class="auth-card" style="display:none;">
             <h2>Criar Conta</h2>
@@ -179,6 +196,100 @@
 
     <script>
         let fotoData = null;
+
+        // Ficheiro: index.html - dentro de <script>
+// ... restante JS ...
+
+const imageInput = document.getElementById('image-input');
+const imagePreviewContainer = document.getElementById('image-preview-container');
+const imagePreview = document.getElementById('image-preview');
+let currentImageBase64 = null; // Para guardar a imagem em formato base64
+
+// Escutar quando o utilizador seleciona uma imagem
+imageInput.addEventListener('change', handleImageSelect);
+
+function handleImageSelect(event) {
+    const file = event.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            // Mostrar pré-visualização
+            imagePreview.src = e.target.result;
+            imagePreviewContainer.style.display = 'inline-block';
+            
+            // Guardar a imagem como base64 (removendo o prefixo data:image/...)
+            currentImageBase64 = e.target.result.split(',')[1];
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+function removeImagePreview() {
+    imageInput.value = ''; // Limpar o input file
+    imagePreview.src = '';
+    imagePreviewContainer.style.display = 'none';
+    currentImageBase64 = null; // Limpar o base64
+}
+
+// Modificar a tua função enviar() existente
+async function enviar() {
+    const userInput = document.getElementById('user-input');
+    const message = userInput.value;
+    const chatMessages = document.getElementById('chat-messages');
+
+    if (!message && !currentImageBase64) return; // Não envia se não houver texto nem imagem
+
+    // Mostrar mensagem do utilizador no chat (com imagem se houver)
+    const userDiv = document.createElement('div');
+    userDiv.className = 'message user-message';
+    userDiv.textContent = message;
+    
+    if (currentImageBase64) {
+        const userImg = document.createElement('img');
+        userImg.src = `data:image/png;base64,${currentImageBase64}`; // Mostra a imagem enviada
+        userImg.style.maxWidth = '200px';
+        userImg.style.borderRadius = '5px';
+        userDiv.appendChild(userImg);
+    }
+    
+    chatMessages.appendChild(userDiv);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+
+    // Limpar o input e a pré-visualização
+    userInput.value = '';
+    removeImagePreview();
+
+    // Enviar dados para o backend
+    const data = {
+        msg: message,
+        image: currentImageBase64 // Novo: Enviar a imagem como base64
+    };
+
+    try {
+        const response = await fetch('/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        
+        if (!response.ok) {
+            throw new Error('Erro na resposta do servidor');
+        }
+        
+        const result = await response.json();
+        
+        // Mostrar resposta da IA no chat
+        const aiDiv = document.createElement('div');
+        aiDiv.className = 'message ai-message';
+        aiDiv.textContent = result.resposta;
+        chatMessages.appendChild(aiDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        
+    } catch (error) {
+        console.error('Erro ao enviar mensagem:', error);
+        // Podes mostrar uma mensagem de erro ao utilizador aqui
+    }
+}
 
         function toggleAuth() {
             const login = document.getElementById('login-card');
@@ -329,6 +440,22 @@
                 appendMsg(data.resposta, 'ia');
             } catch(e) { appendMsg("Erro de conexão.", 'ia'); }
         }
+        function loginGoogle() {
+    google.accounts.id.initialize({
+        client_id: "314184167979-drqft3ldcshj3vn1730dtt0er1ha9spd.apps.googleusercontent.com",
+        callback: handleCredentialResponse
+    });
+    google.accounts.id.prompt(); // Mostra o "One Tap" ou a janela de escolha
+}
+
+// Esta função recebe os dados do Google após o login
+function handleCredentialResponse(response) {
+    // Aqui o Google envia um "token". Para este nível do projeto, 
+    // vamos apenas simular que correu bem e extrair um nome genérico.
+    const userLogado = "Utilizador_Google"; 
+    localStorage.setItem('morais_user', userLogado);
+    entrarNoSistema(userLogado);
+}
         
 
     </script>
