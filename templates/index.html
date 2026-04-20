@@ -256,14 +256,29 @@
         }
 
         function processarLogin() {
+            
             const user = document.getElementById('login-id').value;
-            if(user) { localStorage.setItem('morais_user', user); entrarNoSistema(user); }
+    const pass = document.getElementById('login-pass').value;
+
+    if(user.trim() !== "") { 
+        localStorage.setItem('morais_user', user); 
+        entrarNoSistema(user); 
+    } else {
+        alert("Por favor, escreve um nome de utilizador!");
+    }
         }
 
         function processarRegisto() {
             const email = document.getElementById('reg-email').value;
-            const user = document.getElementById('reg-user').value;
-            if(email.includes('@') && user) { localStorage.setItem('morais_user', user); entrarNoSistema(user); }
+    const user = document.getElementById('reg-user').value;
+    
+    // Verifica se tem @ no email e se o user não está vazio
+    if(email.includes('@') && user.trim() !== "") { 
+        localStorage.setItem('morais_user', user); 
+        entrarNoSistema(user); 
+    } else {
+        alert("Preenche o Gmail corretamente (com @) e escolhe um Username!");
+    }
         }
 
         function loginGoogle() { entrarNoSistema("User_Google"); }
