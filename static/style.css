@@ -4,3 +4,20 @@ body { background: #111; color: white; font-family: sans-serif; display: flex; j
 .input-area { display: flex; gap: 10px; }
 input { flex: 1; padding: 10px; border-radius: 5px; border: none; }
 button { padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+/* Para o negrito não ser demasiado "pesado" */
+strong {
+    color: #fff;
+    font-weight: 600;
+}
+
+/* Estilo para os itens de lista que a IA criar */
+.message li {
+    margin-left: 20px;
+    margin-bottom: 8px;
+    list-style-type: disc;
+}
+
+/* Espaçamento entre parágrafos na resposta da IA */
+.ia div {
+    display: block;
+}
