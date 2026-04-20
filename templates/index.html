@@ -250,27 +250,42 @@
                 hist.forEach(m => appendMsg(m.text, m.type, false));
             }
         }
+        function formatarMarkdown(texto) {
+    if (!texto) return "";
+    let f = texto;
+    // 1. Negrito: **texto** -> <strong>texto</strong>
+    f = f.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    // 2. Listas: Linhas que começam com * ou -
+    f = f.replace(/^\s*[\*\-]\s+(.*)/gm, '<li>$1</li>');
+    // 3. Quebras de linha: Transforma enter em <br>
+    f = f.replace(/\n/g, '<br>');
+    return f;
+}
 
-        function appendMsg(text, type, save = true) {
-            const win = document.getElementById('chat-window');
-            const div = document.createElement('div');
-            div.className = `message ${type}`;
-            
-            if (type === 'ia') {
-                div.innerHTML = `<div class="ia-avatar"></div><div>${text}</div>`;
-            } else {
-                div.innerText = text;
-            }
+       function appendMsg(text, type, save = true) {
+    const win = document.getElementById('chat-window');
+    const div = document.createElement('div');
+    div.className = `message ${type}`;
+    
+    // Aplicamos a formatação aqui
+    const conteudoLimpo = formatarMarkdown(text);
 
-            win.appendChild(div);
-            win.scrollTop = win.scrollHeight;
-            if (save) {
-                const hist = JSON.parse(localStorage.getItem('morais_hist')) || [];
-                hist.push({ text, type });
-                localStorage.setItem('morais_hist', JSON.stringify(hist));
-            }
-        }
+    if (type === 'ia') {
+        // Usamos innerHTML para renderizar o negrito e as listas
+        div.innerHTML = `<div class="ia-avatar"></div><div style="flex:1">${conteudoLimpo}</div>`;
+    } else {
+        div.innerHTML = `<div>${conteudoLimpo}</div>`;
+    }
 
+    win.appendChild(div);
+    win.scrollTop = win.scrollHeight;
+
+    if (save) {
+        const hist = JSON.parse(localStorage.getItem('morais_hist')) || [];
+        hist.push({ text, type });
+        localStorage.setItem('morais_hist', JSON.stringify(hist));
+    }
+}
         function novoChat() {
     const histAtual = JSON.parse(localStorage.getItem('morais_hist')) || [];
     

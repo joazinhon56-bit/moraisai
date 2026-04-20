@@ -21,3 +21,16 @@ strong {
 .ia div {
     display: block;
 }
+/* Estilo para as listas da IA */
+.message li {
+    margin-left: 25px;
+    margin-top: 5px;
+    list-style-type: disc;
+    display: list-item; /* Garante que a bolinha aparece */
+}
+
+/* Cor do negrito para destacar */
+strong {
+    color: #fff;
+    font-weight: 700;
+}
