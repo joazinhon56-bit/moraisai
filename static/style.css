@@ -1,106 +1,128 @@
-body { background: #111; color: white; font-family: sans-serif; display: flex; justify-content: center; padding: 50px; }
-.chat-container { width: 100%; max-width: 600px; background: #222; padding: 20px; border-radius: 10px; }
-#janela-chat { height: 300px; overflow-y: auto; border-bottom: 1px solid #444; margin-bottom: 20px; padding: 10px; }
-.input-area { display: flex; gap: 10px; }
-input { flex: 1; padding: 10px; border-radius: 5px; border: none; }
-button { padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
-/* Para o negrito não ser demasiado "pesado" */
-strong {
-    color: #fff;
-    font-weight: 600;
-}
+<style>
+    :root {
+        --bg-dark: #131314;
+        --sidebar-bg: #1e1f20;
+        --hover-color: #2e3034;
+        --text-main: #e3e3e3;
+        --accent-blue: #a8c7fa;
+    }
 
-/* Estilo para os itens de lista que a IA criar */
-.message li {
-    margin-left: 20px;
-    margin-bottom: 8px;
-    list-style-type: disc;
-}
+    /* --- 1. BASE E LAYOUT --- */
+    body { 
+        font-family: 'Inter', sans-serif; 
+        background-color: var(--bg-dark); 
+        color: var(--text-main); 
+        margin: 0; 
+        height: 100vh; 
+        display: flex; 
+        overflow: hidden; 
+    }
 
-/* Espaçamento entre parágrafos na resposta da IA */
-.ia div {
-    display: block;
-}
-/* Estilo para as listas da IA */
-.message li {
-    margin-left: 25px;
-    margin-top: 5px;
-    list-style-type: disc;
-    display: list-item; /* Garante que a bolinha aparece */
-}
+    /* --- 2. AUTH E LOGIN (TOPICO 1) --- */
+    .auth-overlay { 
+        position: fixed; inset: 0; background: var(--bg-dark); 
+        z-index: 9999; display: flex; justify-content: center; align-items: center; 
+    }
+    .auth-card { 
+        background: var(--sidebar-bg); padding: 40px; border-radius: 28px; 
+        width: 350px; text-align: center; border: 1px solid #333; 
+    }
+    input.auth-input { 
+        width: 100%; padding: 12px; margin: 10px 0; border-radius: 10px; 
+        border: 1px solid #444; background: #131314; color: white; box-sizing: border-box; 
+    }
+    .btn-auth { 
+        width: 100%; padding: 12px; border-radius: 20px; border: none; 
+        background: var(--accent-blue); color: #062e6f; font-weight: bold; cursor: pointer; 
+    }
 
-/* Cor do negrito para destacar */
-strong {
-    color: #fff;
-    font-weight: 700;
-}
-/* Ficheiro: index.html - dentro de <style> */
-/* ... restante CSS ... */
+    /* --- 3. SIDEBAR E CHAT MAIN --- */
+    #sidebar { 
+        width: 280px; background-color: var(--sidebar-bg); 
+        display: none; flex-direction: column; padding: 16px; border-right: 1px solid #333;
+    }
 
-#attach-image-btn {
-    background-color: #f0f0f0;
-    border: 1px solid #ccc;
-    padding: 8px 12px;
-    border-radius: 5px;
-    cursor: pointer;
-    margin-right: 10px;
-}
+    #main-chat {
+        flex: 1;
+        display: none; /* Escondido até o login ser feito */
+        flex-direction: column;
+        position: relative;
+    }
 
-#image-preview-container {
-    margin-top: 10px;
-    position: relative;
-    display: inline-block;
-}
+    #chat-window { 
+        flex: 1; overflow-y: auto; padding: 20px 15%; 
+        display: flex; flex-direction: column; gap: 24px; 
+    }
 
-#image-preview {
-    max-width: 150px;
-    max-height: 150px;
-    border-radius: 5px;
-    border: 1px solid #ddd;
-}
+    /* --- 4. MENSAGENS E MARKDOWN --- */
+    .message { max-width: 90%; line-height: 1.6; font-size: 16px; }
+    .user { align-self: flex-end; background: #2e3034; padding: 12px 20px; border-radius: 20px; }
+    .ia { align-self: flex-start; display: flex; gap: 15px; }
+    .ia-avatar { 
+        width: 30px; height: 30px; border-radius: 50%; 
+        background: linear-gradient(45deg, #4285f4, #9b72cb); flex-shrink: 0; 
+    }
 
-#image-preview-container button {
-    position: absolute;
-    top: -10px;
-    right: -10px;
-    background-color: red;
-    color: white;
-    border: none;
-    border-radius: 50%;
-    cursor: pointer;
-    padding: 5px;
-    font-size: 12px;
-}
-/* Garante que o chat ocupa o ecrã todo mas só aparece depois do login */
-#main-chat {
-    flex: 1;
-    display: none; /* ISTO ESCONDE A BARRA NO LOGIN */
-    flex-direction: column;
-}
+    strong { color: #fff; font-weight: 700; }
+    
+    .message li {
+        margin-left: 25px;
+        margin-top: 8px;
+        list-style-type: disc;
+        display: list-item;
+    }
 
-/* Estilo dos ícones da barra de input */
-.icon-btn {
-    background: none;
-    border: none;
-    font-size: 20px;
-    cursor: pointer;
-    color: #a8c7fa;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: transform 0.2s;
-}
+    /* --- 5. BARRA DE INPUT (TOPICOS 2 E 3) --- */
+    .input-container { padding: 20px 15%; }
 
-.icon-btn:hover {
-    transform: scale(1.1);
-}
+    .input-wrapper {
+        background: #1e1f20;
+        border-radius: 28px;
+        padding: 8px 20px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        border: 1px solid #3c4043;
+    }
 
-.input-wrapper {
-    background: #1e1f20;
-    border-radius: 28px;
-    padding: 8px 20px;
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    border: 1px solid #3c4043;
-}
+    #user-input { 
+        flex: 1; background: transparent; border: none; 
+        color: white; outline: none; font-size: 16px; 
+    }
+
+    .icon-btn {
+        background: none; border: none; font-size: 20px;
+        cursor: pointer; color: var(--accent-blue);
+        display: flex; align-items: center; justify-content: center;
+        transition: transform 0.2s;
+    }
+
+    .icon-btn:hover { transform: scale(1.1); }
+
+    /* --- 6. PREVISUALIZAÇÃO DE IMAGEM --- */
+    #image-preview-container {
+        display: none;
+        margin-bottom: 10px;
+        text-align: center;
+        position: relative;
+    }
+
+    #image-preview {
+        max-width: 120px;
+        border-radius: 12px;
+        border: 2px solid var(--accent-blue);
+    }
+
+    .btn-remove-img {
+        position: absolute;
+        top: -10px;
+        background: #ea4335;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 22px;
+        height: 22px;
+        cursor: pointer;
+        font-weight: bold;
+    }
+</style>
