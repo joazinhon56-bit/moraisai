@@ -186,6 +186,28 @@
             login.style.display = login.style.display === 'none' ? 'block' : 'none';
             reg.style.display = reg.style.display === 'none' ? 'block' : 'none';
         }
+        function atualizarSidebar() {
+    const todosChats = JSON.parse(localStorage.getItem('morais_todos_chats')) || [];
+    const lista = document.getElementById('recent-list');
+    if(!lista) return; // Segurança caso o ID seja diferente
+    
+    lista.innerHTML = ''; // Limpa a lista visual
+
+    todosChats.forEach((chat, index) => {
+        const item = document.createElement('div');
+        item.className = 'recent-item';
+        item.innerHTML = `🕒 ${chat.titulo}`;
+        item.onclick = () => {
+            localStorage.setItem('morais_hist', JSON.stringify(chat.mensagens));
+            carregarHistorico();
+        };
+        lista.appendChild(item);
+    });
+}
+
+// Chamar isto dentro da tua função entrarNoSistema() ou no window.onload
+// para que os chats apareçam mal entras no site:
+// atualizarSidebar();
 
         window.onload = () => {
             const user = localStorage.getItem('morais_user');
@@ -242,10 +264,30 @@
         }
 
         function novoChat() {
-            localStorage.removeItem('morais_hist');
-            carregarHistorico();
-        }
+    const histAtual = JSON.parse(localStorage.getItem('morais_hist')) || [];
+    
+    // Só guarda se houver mensagens do utilizador
+    if (histAtual.length > 1) {
+        const todosChats = JSON.parse(localStorage.getItem('morais_todos_chats')) || [];
+        
+        // Cria um título baseado na primeira mensagem do utilizador
+        const primeiraMsg = histAtual.find(m => m.type === 'user');
+        const titulo = primeiraMsg ? primeiraMsg.text.substring(0, 20) + "..." : "Nova conversa";
 
+        // Adiciona ao início da lista de chats
+        todosChats.unshift({
+            titulo: titulo,
+            mensagens: histAtual
+        });
+
+        localStorage.setItem('morais_todos_chats', JSON.stringify(todosChats));
+    }
+
+    // Limpa o chat atual e atualiza a barra lateral
+    localStorage.removeItem('morais_hist');
+    carregarHistorico();
+    atualizarSidebar();
+}
         function fazerLogout() { localStorage.clear(); location.reload(); }
 
         async function enviar() {
@@ -264,6 +306,10 @@
                 appendMsg(data.resposta, 'ia');
             } catch(e) { appendMsg("Erro de conexão.", 'ia'); }
         }
+        function entrarNoSistema(nome) {
+    // ... o teu código de esconder ecrãs ...
+    atualizarSidebar(); // <-- ADICIONA ESTA LINHA AQUI
+}
     </script>
 </body>
 </html>
